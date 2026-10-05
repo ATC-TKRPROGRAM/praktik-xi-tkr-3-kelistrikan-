@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spin Wheel & Timer Tes Praktik XI TKR 3</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts: Inter & Orbitron -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Orbitron', 'sans-serif'],
+          },
+          colors: {
+            racing: {
+              red: '#ef4444',
+              yellow: '#eab308',
+              dark: '#0f172a',
+              card: '#1e293b'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    /* Glow & Pulsing Effects */
+    .glow-yellow {
+      box-shadow: 0 0 25px rgba(234, 179, 8, 0.4);
+    }
+    .glow-red {
+      box-shadow: 0 0 25px rgba(239, 68, 68, 0.5);
+    }
+    .glow-green {
+      box-shadow: 0 0 25px rgba(16, 185, 129, 0.4);
+    }
+    .text-glow {
+      text-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
+    }
+    @keyframes pulse-fast {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.02); }
+    }
+    .animate-pulse-fast {
+      animation: pulse-fast 0.8s infinite;
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col font-sans overflow-x-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-zinc-950 text-slate-100 selection:bg-amber-500 selection:text-black">
+
+  <!-- Top Navigation Header -->
+  <header class="w-full bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-30 px-4 py-3">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-red-600 flex items-center justify-center text-slate-950 shadow-lg shadow-amber-500/20">
+          <i class="fa-solid fa-bolt text-xl"></i>
+        </div>
+        <div>
+          <h1 class="font-display font-black text-lg md:text-xl tracking-wider bg-gradient-to-r from-amber-400 via-amber-200 to-red-500 bg-clip-text text-transparent">
+            TES PRAKTIK KELISTRIKAN TKR 3
+          </h1>
+          <p class="text-xs text-slate-400">Timer Praktik 5 Menit • 2 Job Sheet Wiring • KKM: 80</p>
+        </div>
+      </div>
+
+      <!-- Quick Controls Header -->
+      <div class="flex items-center gap-2">
+        <button id="soundToggleBtn" onclick="toggleSound()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-2 transition">
+          <i id="soundIcon" class="fa-solid fa-volume-high text-amber-400"></i>
+          <span id="soundLabel" class="hidden sm:inline">Suara: ON</span>
+        </button>
+        <button onclick="exportToCSV()" class="px-3 py-1.5 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-600/40 text-emerald-300 text-xs font-semibold flex items-center gap-2 transition">
+          <i class="fa-solid fa-file-excel text-emerald-400"></i>
+          <span class="hidden sm:inline">Export Rekap</span>
+        </button>
+        <button onclick="resetAllStudents()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-2 transition">
+          <i class="fa-solid fa-rotate-right text-amber-400"></i>
+          <span class="hidden sm:inline">Reset All</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Live Testing Station Banner (Active Student On Stage) -->
+  <section id="activeTestingStation" class="hidden w-full max-w-7xl mx-auto px-4 mt-4">
+    <div id="testingStationCard" class="bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/30 border-2 border-amber-500/50 rounded-2xl p-4 md:p-5 shadow-2xl relative overflow-hidden transition-all">
+      
+      <!-- Ambient Glow -->
+      <div id="testingGlow" class="absolute -right-20 -top-20 w-60 h-60 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="flex flex-col lg:flex-row items-center justify-between gap-6 relative z-10">
+        
+        <!-- Left: Student Details & Assigned Wiring Jobs -->
+        <div class="flex-1 space-y-3 w-full">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="px-3 py-1 rounded-full bg-amber-500 text-slate-950 text-xs font-black tracking-widest uppercase flex items-center gap-1.5">
+              <i class="fa-solid fa-user-gear"></i> SEDANG PRAKTIK SEKARANG
+            </span>
+            <span id="activeStudentNis" class="font-mono text-xs text-amber-400 bg-amber-400/10 px-2.5 py-1 rounded-md border border-amber-500/30">
+              NIS: 252610217
+            </span>
+            <span class="text-xs text-slate-400 font-semibold">
+              Maksimal 5 Menit (KKM 80)
+            </span>
+          </div>
+
+          <h2 id="activeStudentName" class="font-display font-black text-xl md:text-2xl text-slate-100 uppercase tracking-wide">
+            AL RIFAI RADITYA
+          </h2>
+
+          <!-- 2 Assigned Jobs Badges -->
+          <div id="activeStudentJobs" class="flex flex-wrap gap-2">
+            <!-- Jobs populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Center: Countdown Timer Widget (5 Minutes) -->
+        <div class="flex flex-col items-center justify-center bg-slate-950/80 border border-slate-800 rounded-2xl p-4 min-w-[240px] text-center w-full lg:w-auto">
+          <span class="text-[10px] font-bold text-slate-400 tracking-wider uppercase mb-1">
+            SISA WAKTU PRAKTIK (MAX 5 MIN)
+          </span>
+
+          <div id="timerDisplay" class="font-display font-black text-4xl md:text-5xl text-amber-400 tracking-wider my-1 text-glow">
+            05:00
+          </div>
+
+          <!-- Timer Progress Bar -->
+          <div class="w-full bg-slate-800 rounded-full h-2.5 mt-2 overflow-hidden border border-slate-700">
+            <div id="timerProgressBar" class="bg-gradient-to-r from-amber-500 to-yellow-400 h-2.5 rounded-full transition-all duration-300" style="width: 100%"></div>
+          </div>
+
+          <p id="timerStatusText" class="text-[10px] text-slate-400 font-semibold mt-1">
+            Status: Berjalan...
+          </p>
+        </div>
+
+        <!-- Right: Action & Grade Input Controls -->
+        <div class="flex flex-col sm:flex-row lg:flex-col gap-2 w-full lg:w-64">
+          <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-3 flex flex-col gap-2">
+            <label class="text-[10px] font-bold text-slate-300 uppercase flex items-center justify-between">
+              <span>Input Nilai Praktik:</span>
+              <span class="text-amber-400 font-mono">KKM ≥ 80</span>
+            </label>
+            <div class="flex items-center gap-2">
+              <input type="number" id="inputScore" min="0" max="100" value="85" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-center font-display font-bold text-lg text-amber-300 focus:outline-none focus:border-amber-500">
+              <button onclick="setQuickScore(85)" class="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 rounded text-slate-300 font-bold">85</button>
+              <button onclick="setQuickScore(75)" class="px-2 py-1 text-xs bg-red-950 hover:bg-red-900 border border-red-800 rounded text-red-300 font-bold">75</button>
+            </div>
+          </div>
+
+          <button onclick="finishTestAndGrade()" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-sm rounded-xl shadow-lg shadow-emerald-500/20 transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-square-check text-base"></i>
+            <span>SELESAI & SIMPAN NILAI</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content Layout -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    
+    <!-- Left / Center Column: Spinner Wheel Canvas -->
+    <section class="lg:col-span-7 xl:col-span-8 flex flex-col items-center justify-center bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 md:p-8 backdrop-blur-sm relative overflow-hidden shadow-2xl">
+      
+      <!-- Automotive Grid Accent -->
+      <div class="absolute inset-0 bg-[linear-gradient(to_right,#1e293b15_1px,transparent_1px),linear-gradient(to_bottom,#1e293b15_1px,transparent_1px)] bg-[size:2rem_2rem] pointer-events-none"></div>
+
+      <!-- Options Bar above wheel -->
+      <div class="w-full flex flex-wrap items-center justify-between gap-3 mb-6 z-10">
+        <div class="flex items-center gap-2 bg-slate-950/80 px-3 py-1.5 rounded-full border border-slate-800">
+          <span class="text-xs font-medium text-slate-400">Sisa Belum Dipanggil:</span>
+          <span id="activeCountBadge" class="text-xs font-bold text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">40</span>
+        </div>
+
+        <label class="flex items-center gap-2 cursor-pointer bg-slate-950/80 px-3 py-1.5 rounded-full border border-slate-800 hover:border-slate-700 transition">
+          <input type="checkbox" id="autoRemoveToggle" checked class="w-4 h-4 accent-amber-500 rounded cursor-pointer">
+          <span class="text-xs font-medium text-slate-300 select-none">Hapus otomatis siswa terpilih</span>
+        </label>
+      </div>
+
+      <!-- Job Sheet Info Bar -->
+      <div class="w-full grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4 z-10 text-center">
+        <div class="p-2 rounded-xl bg-slate-950/80 border border-red-500/30 text-red-400 text-xs font-semibold flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-lightbulb"></i> Lampu Rem
+        </div>
+        <div class="p-2 rounded-xl bg-slate-950/80 border border-sky-500/30 text-sky-400 text-xs font-semibold flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-arrows-rotate"></i> Lampu Mundur
+        </div>
+        <div class="p-2 rounded-xl bg-slate-950/80 border border-amber-500/30 text-amber-400 text-xs font-semibold flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-triangle-exclamation"></i> Sein & Hazard
+        </div>
+        <div class="p-2 rounded-xl bg-slate-950/80 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-bullhorn"></i> Klakson
+        </div>
+      </div>
+
+      <!-- Wheel Container -->
+      <div class="relative w-full max-w-[460px] aspect-square my-2 flex items-center justify-center z-10">
+        
+        <!-- Pointer Arrow Top -->
+        <div class="absolute -top-3 left-1/2 -translate-x-1/2 z-30 filter drop-shadow-[0_4px_10px_rgba(239,68,68,0.8)]">
+          <div class="w-0 h-0 border-l-[18px] border-l-transparent border-r-[18px] border-r-transparent border-t-[32px] border-t-red-600"></div>
+          <div class="w-2 h-2 bg-yellow-300 rounded-full absolute -top-7 left-1/2 -translate-x-1/2"></div>
+        </div>
+
+        <!-- Outer Decorative Chrome Ring -->
+        <div class="absolute inset-0 rounded-full border-8 border-slate-800/90 shadow-[inset_0_0_20px_rgba(0,0,0,0.8),0_0_30px_rgba(234,179,8,0.15)] pointer-events-none"></div>
+
+        <!-- Canvas Spinner -->
+        <canvas id="wheelCanvas" class="w-full h-full rounded-full transition-transform duration-75 ease-out"></canvas>
+
+        <!-- Center Hub Button -->
+        <button id="spinBtn" onclick="spinWheel()" class="absolute w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 border-4 border-slate-900 shadow-2xl shadow-amber-500/50 flex flex-col items-center justify-center text-slate-950 font-display font-black text-sm md:text-base tracking-wider hover:scale-105 active:scale-95 transition-all z-20 group">
+          <i class="fa-solid fa-gauge-high text-lg md:text-xl group-hover:rotate-45 transition-transform"></i>
+          <span>PUTAR</span>
+        </button>
+      </div>
+
+      <!-- Footer Info under wheel -->
+      <p class="text-xs text-slate-500 mt-4 z-10 text-center">
+        <i class="fa-solid fa-circle-info mr-1 text-amber-500/80"></i> Klik tombol <b>PUTAR</b> atau tekan tombol <b>Space</b> untuk mengocok giliran siswa.
+      </p>
+    </section>
+
+    <!-- Right Column: Student List & Selected History Panel -->
+    <section class="lg:col-span-5 xl:col-span-4 flex flex-col gap-6">
+      
+      <!-- Tabs Container -->
+      <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 backdrop-blur-sm shadow-xl flex flex-col h-[580px]">
+        
+        <!-- Tab Headers -->
+        <div class="flex bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 mb-4">
+          <button id="tabActiveBtn" onclick="switchTab('active')" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-amber-500 text-slate-950 shadow-md">
+            <i class="fa-solid fa-users mr-1.5"></i> Daftar Siswa (<span id="activeTabCount">40</span>)
+          </button>
+          <button id="tabWinnersBtn" onclick="switchTab('winners')" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-slate-200 transition-all">
+            <i class="fa-solid fa-clipboard-check mr-1.5"></i> Rekap Nilai (<span id="winnerTabCount">0</span>)
+          </button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="relative mb-3">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+          <input type="text" id="searchInput" oninput="renderStudentList()" placeholder="Cari nama atau NIS..." class="w-full bg-slate-950/80 border border-slate-800 rounded-lg pl-8 pr-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500/50">
+        </div>
+
+        <!-- Tab 1: Active Student List Content -->
+        <div id="tabActiveContent" class="flex-1 overflow-y-auto pr-1 space-y-2">
+          <!-- Student List Items Rendered Dynamically -->
+        </div>
+
+        <!-- Tab 2: Winners / Grade History Content -->
+        <div id="tabWinnersContent" class="flex-1 overflow-y-auto pr-1 space-y-2 hidden">
+          <!-- Winner Items Rendered Dynamically -->
+        </div>
+
+        <!-- Quick Action Footer inside Sidebar -->
+        <div class="pt-3 border-t border-slate-800/80 mt-3 flex items-center justify-between gap-2">
+          <button onclick="selectAllStudents()" class="text-xs text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1">
+            <i class="fa-solid fa-check-double"></i> Kembalikan Semua
+          </button>
+          <button onclick="clearHistory()" class="text-xs text-red-400 hover:text-red-300 font-semibold flex items-center gap-1">
+            <i class="fa-solid fa-trash-can"></i> Hapus Rekap
+          </button>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Winner Announcement Modal -->
+  <div id="winnerModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
+    <div class="bg-gradient-to-b from-slate-900 to-slate-950 border border-amber-500/40 rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl shadow-amber-500/20 text-center transform scale-90 transition-transform duration-300 relative overflow-hidden" id="winnerModalBox">
+      
+      <!-- Glowing Background Radial -->
+      <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- Header Badge -->
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold mb-3 uppercase tracking-widest">
+        <i class="fa-solid fa-bolt text-amber-400"></i> HASIL POLLING GILIRAN PRAKTIK
+      </div>
+
+      <!-- Icon -->
+      <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 text-slate-950 flex items-center justify-center text-2xl font-black shadow-lg shadow-amber-500/30 animate-bounce">
+        <i class="fa-solid fa-user-gear"></i>
+      </div>
+
+      <!-- Winner Details -->
+      <p id="winnerNis" class="font-mono text-xs text-amber-400/90 font-bold tracking-wider mb-0.5">NIS: 252610217</p>
+      <h2 id="winnerName" class="font-display font-black text-xl md:text-2xl text-slate-100 uppercase tracking-wide leading-tight mb-4">
+        AL RIFAI RADITYA
+      </h2>
+
+      <!-- Assignment Container for 2 Random Jobs -->
+      <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 mb-5 text-left">
+        <div class="flex items-center justify-between text-slate-300 text-xs font-bold mb-3 border-b border-slate-800 pb-2">
+          <span class="flex items-center gap-2">
+            <i class="fa-solid fa-diagram-project text-amber-400"></i>
+            <span>Dua (2) Rangkaian Wiring Diagram:</span>
+          </span>
+          <span class="text-amber-400 font-mono">Max 5 Menit</span>
+        </div>
+        <div id="winnerJobsList" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <!-- Dynamically populated with 2 random electrical jobs -->
+        </div>
+      </div>
+
+      <!-- Actions: Start 5-Min Timer CTA -->
+      <div class="flex flex-col gap-2">
+        <button onclick="startStudentPracticalTest()" class="w-full py-3.5 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-300 hover:from-amber-400 hover:to-yellow-200 text-slate-950 font-black rounded-xl shadow-xl shadow-amber-500/30 transition text-sm flex items-center justify-center gap-2 transform hover:scale-[1.02] active:scale-95">
+          <i class="fa-solid fa-stopwatch text-lg"></i>
+          <span>SIAP PRAKTIK (Mulai Waktu 5 Menit)</span>
+        </button>
+        <button onclick="closeWinnerModal()" class="w-full py-2 text-xs font-semibold text-slate-400 hover:text-slate-200 transition">
+          Tutup Tanpa Memulai Timer
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // 4 Electrical Wiring Jobs Definition
+    const electricalJobs = [
+      { id: 'rem', title: 'Lampu Rem', icon: 'fa-lightbulb', color: 'from-red-500/20 to-rose-500/20', border: 'border-red-500/40', text: 'text-red-400', badge: 'bg-red-500/10 text-red-400 border-red-500/30' },
+      { id: 'mundur', title: 'Lampu Mundur', icon: 'fa-arrows-rotate', color: 'from-sky-500/20 to-blue-500/20', border: 'border-sky-500/40', text: 'text-sky-400', badge: 'bg-sky-500/10 text-sky-400 border-sky-500/30' },
+      { id: 'sein', title: 'Lampu Sein & Hazard', icon: 'fa-triangle-exclamation', color: 'from-amber-500/20 to-yellow-500/20', border: 'border-amber-500/40', text: 'text-amber-400', badge: 'bg-amber-500/10 text-amber-400 border-amber-500/30' },
+      { id: 'klakson', title: 'Sistem Klakson', icon: 'fa-bullhorn', color: 'from-emerald-500/20 to-teal-500/20', border: 'border-emerald-500/40', text: 'text-emerald-400', badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' }
+    ];
+
+    function getRandomTwoJobs() {
+      const shuffled = [...electricalJobs].sort(() => 0.5 - Math.random());
+      return [shuffled[0], shuffled[1]];
+    }
+
+    // Initial Master Student Dataset (XI TKR 3 - 40 Students)
+    const masterStudents = [
+      { nis: "252610217", name: "AL RIFAI RADITYA", gender: "L" },
+      { nis: "252610218", name: "ALIF KURNIAWAN", gender: "L" },
+      { nis: "252610007", name: "ALVIN PRATAMA PUTRA RIANTO", gender: "L" },
+      { nis: "252610220", name: "ANDRI RAJA MAULANA", gender: "L" },
+      { nis: "252610264", name: "AZHAR ADITTIYA", gender: "L" },
+      { nis: "252610223", name: "BAYU SEHAN ALI", gender: "L" },
+      { nis: "252610014", name: "DAIS GERLANDI", gender: "L" },
+      { nis: "252610267", name: "DAMIAN TIRZA STEFANUS", gender: "L" },
+      { nis: "252610015", name: "DANIESH SATYA RAHMAWAN", gender: "L" },
+      { nis: "252610228", name: "FERDI ADRIANSYAH", gender: "L" },
+      { nis: "252610020", name: "FIQRI RAMADHAN PUTRA GUNAWAN", gender: "L" },
+      { nis: "252610023", name: "KHOIRUL IKHSAN", gender: "L" },
+      { nis: "252610232", name: "KHUSEN ADITAMA", gender: "L" },
+      { nis: "252610024", name: "LUCKY OKTAVIAN", gender: "L" },
+      { nis: "252610062", name: "MADA ANGGALA", gender: "L" },
+      { nis: "252610278", name: "MOHAMMAD ZAID EMIR MADHANI", gender: "L" },
+      { nis: "252610194", name: "MUHAMAD DWI SASONGKO", gender: "L" },
+      { nis: "252610282", name: "MUHAMMAD AKMAL ALFARIZI", gender: "L" },
+      { nis: "252610025", name: "MUHAMMAD ARVIN ARLIE", gender: "L" },
+      { nis: "252610027", name: "MUHAMMAD EDZAR", gender: "L" },
+      { nis: "252610239", name: "MUHAMMAD FATHIR AKBAR AL JUMANATUL ALI", gender: "L" },
+      { nis: "252610114", name: "MUHAMMAD IQBAL", gender: "L" },
+      { nis: "252610241", name: "MUHAMMAD LURIZAL HALIBI", gender: "L" },
+      { nis: "252610031", name: "MUHAMMAD RAYHAN RAHMAN", gender: "L" },
+      { nis: "252610117", name: "MUHAMMAD REZA ALFIANSYAH", gender: "L" },
+      { nis: "252610242", name: "MUHAMMAD RIFQI UKAIL WIBOWO", gender: "L" },
+      { nis: "252610244", name: "MUHAMMAD SHADAN AUFA", gender: "L" },
+      { nis: "252610287", name: "NURENDI FITRA RUDIANSYAH", gender: "L" },
+      { nis: "252610035", name: "PANJI RADHITYA PURWANTO", gender: "L" },
+      { nis: "252610247", name: "RADITYA BINTANG PRAKOSO", gender: "L" },
+      { nis: "252610120", name: "RAFFAEL GUMAY", gender: "L" },
+      { nis: "252610289", name: "RAYI DIRA ANWAR", gender: "L" },
+      { nis: "252610252", name: "REIZZHA DWI SAPUTRA", gender: "L" },
+      { nis: "252610078", name: "RISKI ARDIANSYAH", gender: "L" },
+      { nis: "252610253", name: "RISNANDO APRILIO", gender: "L" },
+      { nis: "252610037", name: "RIZKY AKBAR ATHALLAH", gender: "L" },
+      { nis: "252610295", name: "RYAN SYAHPUTRA ZAIN", gender: "L" },
+      { nis: "252610296", name: "SAIF ALI VABIYAN", gender: "L" },
+      { nis: "252610256", name: "TEGAR YUDISTIRA", gender: "L" },
+      { nis: "252610975", name: "ZHIYAN SETYAWAN", gender: "L" }
+    ];
+
+    // Application State Variables
+    let activeStudents = [...masterStudents];
+    let winnersList = [];
+    let currentTab = 'active';
+    let isSoundOn = true;
+    let isSpinning = false;
+    let currentSelectedStudent = null;
+    let currentSelectedJobs = [];
+
+    // Wheel Physics & Animation
+    let currentAngle = 0;
+    let spinVelocity = 0;
+    let spinDeceleration = 0.988;
+    let animationFrameId = null;
+    let lastTickIndex = -1;
+
+    // Timer & Practical Test Engine State (5 Minutes = 300s)
+    const MAX_TEST_SECONDS = 300; 
+    let testRemainingSeconds = MAX_TEST_SECONDS;
+    let testTimerInterval = null;
+    let activeTestStudent = null;
+    let isOvertime = false;
+
+    // Canvas Setup
+    const canvas = document.getElementById('wheelCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Vibrant Palette for wheel slices
+    const sliceColors = [
+      '#ef4444', '#f59e0b', '#10b981', '#06b6d4', 
+      '#3b82f6', '#8b5cf6', '#ec4899', '#f97316',
+      '#14b8a6', '#6366f1', '#a855f7', '#0284c7'
+    ];
+
+    // Web Audio Synthesizer Engine
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playTickSound() {
+      if (!isSoundOn) return;
+      try {
+        initAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.04);
+        
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.04);
+      } catch (e) {}
+    }
+
+    function playWinFanfare() {
+      if (!isSoundOn) return;
+      try {
+        initAudio();
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+
+          const startTime = audioCtx.currentTime + idx * 0.1;
+          gain.gain.setValueAtTime(0.2, startTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.3);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(startTime);
+          osc.stop(startTime + 0.3);
+        });
+      } catch (e) {}
+    }
+
+    function playAlarmSound() {
+      if (!isSoundOn) return;
+      try {
+        initAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.3);
+        
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+      } catch(e) {}
+    }
+
+    function toggleSound() {
+      isSoundOn = !isSoundOn;
+      const soundIcon = document.getElementById('soundIcon');
+      const soundLabel = document.getElementById('soundLabel');
+      
+      if (isSoundOn) {
+        soundIcon.className = 'fa-solid fa-volume-high text-amber-400';
+        soundLabel.innerText = 'Suara: ON';
+      } else {
+        soundIcon.className = 'fa-solid fa-volume-xmark text-slate-500';
+        soundLabel.innerText = 'Suara: OFF';
+      }
+    }
+
+    function resizeCanvas() {
+      const container = canvas.parentElement;
+      const size = container.clientWidth;
+      const dpr = window.devicePixelRatio || 1;
+      
+      canvas.width = size * dpr;
+      canvas.height = size * dpr;
+      ctx.scale(dpr, dpr);
+      
+      drawWheel();
+    }
+
+    function drawWheel() {
+      const container = canvas.parentElement;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const radius = Math.min(centerX, centerY) - 12;
+
+      ctx.clearRect(0, 0, width, height);
+
+      const totalSlices = activeStudents.length;
+
+      if (totalSlices === 0) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.fillStyle = '#1e293b';
+        ctx.fill();
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = 'bold 16px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Semua Siswa Telah Terpilih', centerX, centerY);
+        ctx.restore();
+        return;
+      }
+
+      const arcSize = (2 * Math.PI) / totalSlices;
+
+      ctx.save();
+      ctx.translate(centerX, centerY);
+
+      for (let i = 0; i < totalSlices; i++) {
+        const angle = currentAngle + i * arcSize;
+        const color = sliceColors[i % sliceColors.length];
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, radius, angle, angle + arcSize);
+        ctx.fillStyle = color;
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(15, 23, 42, 0.5)';
+        ctx.lineWidth = totalSlices > 20 ? 1 : 2;
+        ctx.stroke();
+
+        ctx.save();
+        ctx.rotate(angle + arcSize / 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+
+        let fontSize = 12;
+        if (totalSlices > 30) fontSize = 9;
+        else if (totalSlices > 20) fontSize = 10;
+        else if (totalSlices > 10) fontSize = 12;
+
+        ctx.font = `bold ${fontSize}px Inter, sans-serif`;
+
+        const nameParts = activeStudents[i].name.split(' ');
+        let displayName = nameParts[0];
+        if (nameParts.length > 1 && totalSlices <= 25) {
+          displayName += ' ' + nameParts[1].charAt(0) + '.';
+        }
+
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+        ctx.shadowBlur = 4;
+        ctx.fillText(displayName, radius - 18, 0);
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+
+    function spinWheel() {
+      if (isSpinning || activeStudents.length === 0) return;
+
+      initAudio();
+      isSpinning = true;
+      document.getElementById('spinBtn').disabled = true;
+
+      spinVelocity = 0.38 + Math.random() * 0.22;
+      lastTickIndex = -1;
+
+      animateSpin();
+    }
+
+    function animateSpin() {
+      currentAngle += spinVelocity;
+      spinVelocity *= spinDeceleration;
+
+      const totalSlices = activeStudents.length;
+      if (totalSlices > 0) {
+        const arcSize = (2 * Math.PI) / totalSlices;
+        const pointerAngle = (1.5 * Math.PI - currentAngle) % (2 * Math.PI);
+        const normalizedAngle = (pointerAngle + 2 * Math.PI) % (2 * Math.PI);
+        const currentSliceIndex = Math.floor(normalizedAngle / arcSize);
+
+        if (currentSliceIndex !== lastTickIndex) {
+          playTickSound();
+          lastTickIndex = currentSliceIndex;
+        }
+      }
+
+      drawWheel();
+
+      if (spinVelocity > 0.002) {
+        animationFrameId = requestAnimationFrame(animateSpin);
+      } else {
+        isSpinning = false;
+        document.getElementById('spinBtn').disabled = false;
+        determineWinner();
+      }
+    }
+
+    function determineWinner() {
+      const totalSlices = activeStudents.length;
+      if (totalSlices === 0) return;
+
+      const arcSize = (2 * Math.PI) / totalSlices;
+      const pointerAngle = (1.5 * Math.PI - currentAngle) % (2 * Math.PI);
+      const normalizedAngle = (pointerAngle + 2 * Math.PI) % (2 * Math.PI);
+      const winnerIndex = Math.floor(normalizedAngle / arcSize) % totalSlices;
+
+      currentSelectedStudent = activeStudents[winnerIndex];
+      currentSelectedJobs = getRandomTwoJobs();
+
+      playWinFanfare();
+      showWinnerModal(currentSelectedStudent, currentSelectedJobs);
+
+      // Auto-remove student if option checked
+      const autoRemove = document.getElementById('autoRemoveToggle').checked;
+      if (autoRemove) {
+        activeStudents.splice(winnerIndex, 1);
+      }
+
+      updateUI();
+    }
+
+    function startStudentPracticalTest() {
+      closeWinnerModal();
+
+      if (!currentSelectedStudent) return;
+
+      activeTestStudent = {
+        student: currentSelectedStudent,
+        jobs: currentSelectedJobs,
+        startTime: new Date()
+      };
+
+      // Reset Timer State
+      testRemainingSeconds = MAX_TEST_SECONDS;
+      isOvertime = false;
+
+      // Update Active Testing Station UI
+      document.getElementById('activeStudentName').innerText = activeTestStudent.student.name;
+      document.getElementById('activeStudentNis').innerText = `NIS: ${activeTestStudent.student.nis}`;
+      
+      const jobsContainer = document.getElementById('activeStudentJobs');
+      jobsContainer.innerHTML = activeTestStudent.jobs.map(j => `
+        <span class="text-xs font-bold px-3 py-1 rounded-lg border ${j.badge} flex items-center gap-1.5">
+          <i class="fa-solid ${j.icon}"></i> ${j.title}
+        </span>
+      `).join('');
+
+      // Default Score Suggestion for passing test (85)
+      document.getElementById('inputScore').value = 85;
+
+      // Show Live Testing Station Banner
+      const station = document.getElementById('activeTestingStation');
+      station.classList.remove('hidden');
+      station.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      // Start Countdown Interval
+      if (testTimerInterval) clearInterval(testTimerInterval);
+      
+      updateTimerDisplay();
+      testTimerInterval = setInterval(tickTestTimer, 1000);
+    }
+
+    function tickTestTimer() {
+      if (testRemainingSeconds > 0) {
+        testRemainingSeconds--;
+        updateTimerDisplay();
+
+        if (testRemainingSeconds === 60) {
+          playAlarmSound(); // 1 Minute Warning!
+        }
+      } else {
+        // OVERTIME / TIME EXPIRED! (Over 5 Minutes)
+        if (!isOvertime) {
+          isOvertime = true;
+          playAlarmSound();
+          
+          // Force score below KKM (<80) automatically
+          document.getElementById('inputScore').value = 70;
+          
+          const card = document.getElementById('testingStationCard');
+          card.className = "bg-gradient-to-r from-red-950 via-slate-900 to-red-950 border-4 border-red-600 rounded-2xl p-4 md:p-5 shadow-2xl animate-pulse-fast relative overflow-hidden";
+          
+          document.getElementById('timerStatusText').innerHTML = `
+            <span class="text-red-400 font-bold uppercase"><i class="fa-solid fa-triangle-exclamation"></i> WAKTU HABIS (> 5 MENIT)! MENGULANG / REMEDIAL (NILAI < 80)</span>
+          `;
+        }
+      }
+    }
+
+    function updateTimerDisplay() {
+      const minutes = Math.floor(testRemainingSeconds / 60);
+      const seconds = testRemainingSeconds % 60;
+      const formatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      
+      const timerDisplay = document.getElementById('timerDisplay');
+      const progressBar = document.getElementById('timerProgressBar');
+      
+      timerDisplay.innerText = formatted;
+
+      const pct = (testRemainingSeconds / MAX_TEST_SECONDS) * 100;
+      progressBar.style.width = `${pct}%`;
+
+      if (!isOvertime) {
+        if (testRemainingSeconds <= 60) {
+          timerDisplay.className = "font-display font-black text-4xl md:text-5xl text-red-500 tracking-wider my-1 text-glow animate-pulse";
+          progressBar.className = "bg-red-500 h-2.5 rounded-full transition-all duration-300";
+        } else if (testRemainingSeconds <= 180) {
+          timerDisplay.className = "font-display font-black text-4xl md:text-5xl text-yellow-400 tracking-wider my-1 text-glow";
+          progressBar.className = "bg-yellow-400 h-2.5 rounded-full transition-all duration-300";
+        } else {
+          timerDisplay.className = "font-display font-black text-4xl md:text-5xl text-amber-400 tracking-wider my-1 text-glow";
+          progressBar.className = "bg-gradient-to-r from-amber-500 to-yellow-400 h-2.5 rounded-full transition-all duration-300";
+        }
+        document.getElementById('timerStatusText').innerText = "Status: Praktik Berjalan...";
+      }
+    }
+
+    function setQuickScore(score) {
+      document.getElementById('inputScore').value = score;
+    }
+
+    function finishTestAndGrade() {
+      if (!activeTestStudent) return;
+
+      if (testTimerInterval) clearInterval(testTimerInterval);
+
+      let score = parseInt(document.getElementById('inputScore').value) || 0;
+      const elapsedSeconds = MAX_TEST_SECONDS - testRemainingSeconds;
+      const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+      const elapsedSecsRem = elapsedSeconds % 60;
+      const durationStr = `${elapsedMinutes}m ${elapsedSecsRem}s`;
+
+      // Enforce KKM rules
+      let status = 'LULUS';
+      if (score < 80 || isOvertime || elapsedSeconds > MAX_TEST_SECONDS) {
+        status = 'REMEDIAL';
+        if (score >= 80 && isOvertime) {
+          score = 75; // Cap score below KKM if overtime exceeded
+        }
+      }
+
+      // Record to history
+      winnersList.unshift({
+        ...activeTestStudent.student,
+        jobs: activeTestStudent.jobs,
+        time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+        duration: durationStr,
+        score: score,
+        status: status,
+        isOvertime: isOvertime
+      });
+
+      // Clear Active Test Station
+      activeTestStudent = null;
+      document.getElementById('activeTestingStation').classList.add('hidden');
+      
+      // Reset Card styling
+      document.getElementById('testingStationCard').className = "bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/30 border-2 border-amber-500/50 rounded-2xl p-4 md:p-5 shadow-2xl relative overflow-hidden transition-all";
+
+      // Switch tab to Winners/Rekap Nilai
+      switchTab('winners');
+      updateUI();
+    }
+
+    function updateUI() {
+      document.getElementById('activeCountBadge').innerText = activeStudents.length;
+      document.getElementById('activeTabCount').innerText = activeStudents.length;
+      document.getElementById('winnerTabCount').innerText = winnersList.length;
+
+      drawWheel();
+      renderStudentList();
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      const tabActiveBtn = document.getElementById('tabActiveBtn');
+      const tabWinnersBtn = document.getElementById('tabWinnersBtn');
+      const tabActiveContent = document.getElementById('tabActiveContent');
+      const tabWinnersContent = document.getElementById('tabWinnersContent');
+
+      if (tab === 'active') {
+        tabActiveBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-amber-500 text-slate-950 shadow-md';
+        tabWinnersBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-slate-200 transition-all';
+        tabActiveContent.classList.remove('hidden');
+        tabWinnersContent.classList.add('hidden');
+      } else {
+        tabWinnersBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-amber-500 text-slate-950 shadow-md';
+        tabActiveBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-slate-200 transition-all';
+        tabWinnersContent.classList.remove('hidden');
+        tabActiveContent.classList.add('hidden');
+      }
+
+      renderStudentList();
+    }
+
+    function renderStudentList() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const tabActiveContent = document.getElementById('tabActiveContent');
+      const tabWinnersContent = document.getElementById('tabWinnersContent');
+
+      if (currentTab === 'active') {
+        const filtered = activeStudents.filter(s => s.name.toLowerCase().includes(search) || s.nis.includes(search));
+        
+        if (filtered.length === 0) {
+          tabActiveContent.innerHTML = `<p class="text-xs text-center text-slate-500 py-8">Tidak ada siswa ditemukan</p>`;
+          return;
+        }
+
+        tabActiveContent.innerHTML = filtered.map((s, idx) => `
+          <div class="flex items-center justify-between p-2.5 bg-slate-950/60 hover:bg-slate-800/80 border border-slate-800/60 rounded-xl transition group">
+            <div class="flex items-center gap-3">
+              <span class="w-6 h-6 rounded-lg bg-slate-800 text-slate-400 font-mono text-[10px] font-bold flex items-center justify-center border border-slate-700">
+                ${idx + 1}
+              </span>
+              <div>
+                <p class="text-xs font-bold text-slate-200 group-hover:text-amber-400 transition">${s.name}</p>
+                <p class="text-[10px] font-mono text-slate-400">NIS: ${s.nis}</p>
+              </div>
+            </div>
+            <button onclick="removeSingleStudent('${s.nis}')" title="Keluarkan dari Roda" class="p-1.5 text-slate-500 hover:text-red-400 transition">
+              <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+          </div>
+        `).join('');
+
+      } else {
+        const filtered = winnersList.filter(s => s.name.toLowerCase().includes(search) || s.nis.includes(search));
+
+        if (filtered.length === 0) {
+          tabWinnersContent.innerHTML = `<p class="text-xs text-center text-slate-500 py-8">Belum ada siswa yang selesai tes</p>`;
+          return;
+        }
+
+        tabWinnersContent.innerHTML = filtered.map((s, idx) => {
+          const isLulus = s.status === 'LULUS';
+          const badgeColor = isLulus ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' : 'bg-red-500/20 text-red-400 border-red-500/40';
+          const scoreColor = isLulus ? 'text-emerald-400' : 'text-red-400';
+
+          return `
+            <div class="p-3 bg-slate-950/70 border ${isLulus ? 'border-emerald-500/30' : 'border-red-500/30'} rounded-xl space-y-2">
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-100">${s.name}</span>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded border ${badgeColor}">
+                      ${s.status} (${s.score})
+                    </span>
+                  </div>
+                  <p class="text-[10px] font-mono text-slate-400">NIS: ${s.nis} • Durasi: ${s.duration || 'N/A'}</p>
+                </div>
+                <span class="font-display font-black text-lg ${scoreColor}">${s.score}</span>
+              </div>
+              <div class="flex flex-wrap gap-1 pt-1.5 border-t border-slate-800/80">
+                ${(s.jobs || []).map(j => `
+                  <span class="text-[10px] font-semibold px-2 py-0.5 rounded-md border ${j.badge}">
+                    <i class="fa-solid ${j.icon} mr-1"></i>${j.title}
+                  </span>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    function removeSingleStudent(nis) {
+      activeStudents = activeStudents.filter(s => s.nis !== nis);
+      updateUI();
+    }
+
+    function selectAllStudents() {
+      activeStudents = [...masterStudents];
+      updateUI();
+    }
+
+    function resetAllStudents() {
+      if (confirm('Apakah Anda yakin ingin mereset seluruh daftar siswa dan riwayat nilai?')) {
+        activeStudents = [...masterStudents];
+        winnersList = [];
+        if (testTimerInterval) clearInterval(testTimerInterval);
+        document.getElementById('activeTestingStation').classList.add('hidden');
+        updateUI();
+      }
+    }
+
+    function clearHistory() {
+      winnersList = [];
+      updateUI();
+    }
+
+    function showWinnerModal(student, jobs) {
+      document.getElementById('winnerNis').innerText = `NIS: ${student.nis}`;
+      document.getElementById('winnerName').innerText = student.name;
+
+      const jobsContainer = document.getElementById('winnerJobsList');
+      jobsContainer.innerHTML = jobs.map((job, idx) => `
+        <div class="bg-gradient-to-br ${job.color} border ${job.border} p-3 rounded-xl flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${job.badge} border">
+              JOB ${idx + 1}
+            </span>
+            <i class="fa-solid ${job.icon} ${job.text} text-lg"></i>
+          </div>
+          <p class="font-display font-bold text-sm text-slate-100 mb-1">${job.title}</p>
+          <p class="text-[10px] text-slate-300">Merangkai diagram kelistrikan wiring</p>
+        </div>
+      `).join('');
+
+      const modal = document.getElementById('winnerModal');
+      const box = document.getElementById('winnerModalBox');
+
+      modal.classList.remove('opacity-0', 'pointer-events-none');
+      box.classList.remove('scale-90');
+      box.classList.add('scale-100');
+    }
+
+    function closeWinnerModal() {
+      const modal = document.getElementById('winnerModal');
+      const box = document.getElementById('winnerModalBox');
+
+      modal.classList.add('opacity-0', 'pointer-events-none');
+      box.classList.remove('scale-100');
+      box.classList.add('scale-90');
+    }
+
+    // Export Rekap Nilai to CSV File
+    function exportToCSV() {
+      if (winnersList.length === 0) {
+        alert('Belum ada data rekap nilai untuk di-export.');
+        return;
+      }
+
+      let csv = 'No,NIS,Nama Siswa,Job 1,Job 2,Durasi,Nilai,Status (KKM 80)\n';
+      winnersList.forEach((w, idx) => {
+        const job1 = w.jobs[0] ? w.jobs[0].title : '';
+        const job2 = w.jobs[1] ? w.jobs[1].title : '';
+        csv += `${idx + 1},"${w.nis}","${w.name}","${job1}","${job2}","${w.duration || ''}",${w.score},"${w.status}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `REKAP_TES_PRAKTIK_XI_TKR_3.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Keyboard Space shortcut
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        const winnerModal = document.getElementById('winnerModal');
+        if (!winnerModal.classList.contains('pointer-events-none')) {
+          startStudentPracticalTest();
+          e.preventDefault();
+        } else if (!isSpinning && document.getElementById('activeTestingStation').classList.contains('hidden')) {
+          spinWheel();
+          e.preventDefault();
+        }
+      }
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+
+    window.onload = function() {
+      resizeCanvas();
+      updateUI();
+    };
+  </script>
+</body>
+</html>
